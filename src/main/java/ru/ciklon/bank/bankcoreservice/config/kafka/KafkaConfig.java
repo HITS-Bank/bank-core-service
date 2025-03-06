@@ -42,7 +42,7 @@ public class KafkaConfig {
         configProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
         configProps.put(ConsumerConfig.GROUP_ID_CONFIG, "bank.group");
         configProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        configProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+        configProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         configProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
         return new DefaultKafkaConsumerFactory<>(configProps);
@@ -71,18 +71,23 @@ public class KafkaConfig {
     }
 
     @Bean
+    public NewTopic userCreditApproved() {
+        return new NewTopic("credit.approved", 1, (short) 1);
+    }
+
+    @Bean
     public NewTopic userAccountCloseResponse() {
         return new NewTopic("user.account.close.response", 1, (short) 1);
     }
 
     @Bean
     public NewTopic userCreditRepaymentRequest() {
-        return new NewTopic("user.credit.repayment.request", 1, (short) 1);
+        return new NewTopic("credit.repayment.request", 1, (short) 1);
     }
 
     @Bean
     public NewTopic userCreditRepaymentResponse() {
-        return new NewTopic("user.credit.repayment.response", 1, (short) 1);
+        return new NewTopic("credit.repayment.response", 1, (short) 1);
     }
 
     @Bean

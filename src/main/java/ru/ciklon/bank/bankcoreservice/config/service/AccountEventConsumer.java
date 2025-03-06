@@ -60,13 +60,10 @@ public class AccountEventConsumer {
         }
     }
 
-    @KafkaListener(topics = "credit.approved.request", groupId = "bank.group")
+    @KafkaListener(topics = "credit.approved", groupId = "bank.group")
     public void handleCreditApproved(final ConsumerRecord<String, CreditApprovedDto> record) {
         log.info("Received credit.create event: {}", record.value());
         try {
-            final UUID correlationId = parseCorrelationId(record);
-            if (correlationId == null) { return;}
-
             creditService.processCreditApproval(record.value());
             log.info("Credit created successfully for client {}", record.value().getClientId());
         } catch (Exception e) {
@@ -136,15 +133,17 @@ public class AccountEventConsumer {
     }
 
     @KafkaListener(topics = "credit.client.info.request", groupId = "bank.group")
-    public void handleClientInfoRequest(final ConsumerRecord<String, UUID> record) {
+    public void handleClientInfoRequest(final ConsumerRecord<String, String> record) {
         log.info("Received client info request: {}", record.value());
         try {
             final UUID correlationId = parseCorrelationId(record);
             if (correlationId == null) { return;}
 
-            final UUID clientId = record.value();
-            final ClientInfoDto clientInfo = clientService.getClientInfoForCredit(clientId);
-            kafkaProducerService.sendUserInfoForCredit(clientInfo);
+            final UUID clientId = UUID.fromString(record.value());
+
+            //final ClientInfoDto clientInfo = clientService.getClientInfoForCredit(clientId);
+            final ClientInfoDto clientInfo = new ClientInfoDto();
+            kafkaProducerService.sendUserInfoForCredit(clientInfo,correlationId);
             log.info("Client info sent for client {}", clientId);
         } catch (Exception e) {
             log.error("Error processing client info request: {}", e.getMessage(), e);

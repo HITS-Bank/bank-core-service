@@ -5,11 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ru.ciklon.bank.bankcoreservice.api.dto.AccountDto;
-import ru.ciklon.bank.bankcoreservice.api.dto.AccountTransactionDto;
-import ru.ciklon.bank.bankcoreservice.api.dto.CreditRepaymentRequest;
-import ru.ciklon.bank.bankcoreservice.api.dto.OpenAccountDto;
-import ru.ciklon.bank.bankcoreservice.api.dto.TransactionRequest;
+import ru.ciklon.bank.bankcoreservice.api.dto.*;
 import ru.ciklon.bank.bankcoreservice.api.enums.AccountTransactionType;
 import ru.ciklon.bank.bankcoreservice.api.enums.CreditTransactionType;
 import ru.ciklon.bank.bankcoreservice.core.entity.Account;
@@ -153,6 +149,7 @@ public class AccountService {
 
         creditContract.setRemainingAmount(creditContract.getRemainingAmount().max(BigDecimal.ZERO));
         creditContractRepository.save(creditContract);
+        return null;
     }
 
     private void recordAccountTransaction(final Account account, final AccountTransactionType type, final BigDecimal amount) {

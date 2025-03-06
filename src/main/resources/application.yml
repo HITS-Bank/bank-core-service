@@ -1,3 +1,8 @@
+server:
+  port: ${APPLICATION_PORT:8888}
+  tomcat:
+    connection-timeout: 120000
+
 spring:
   application:
     name: bank-core-service
@@ -16,13 +21,13 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
   kafka:
     consumer:
-      bootstrap-servers: localhost:9093
+      bootstrap-servers: localhost:9092
       group-id: bank-group
       auto-offset-reset: earliest
     listener:
       missing-topics-fatal: false
     producer:
-      bootstrap-servers: localhost:9093
+      bootstrap-servers: localhost:9092
 
 logging:
   liquibase:

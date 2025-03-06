@@ -25,11 +25,15 @@ public class KafkaProducerService {
         kafkaTemplate.send(topic, message);
     }
 
-    public void sendUserInfoForCredit(final ClientInfoDto clientInfoDto) {
+    public void sendUserInfoForCredit(final ClientInfoDto clientInfoDto, UUID correlationId) {
         try {
             final ObjectMapper objectMapper = new ObjectMapper();
             final String message = objectMapper.writeValueAsString(clientInfoDto);
-            kafkaTemplate.send("credit.client.info.response", message);
+            ProducerRecord<String, String> record = new ProducerRecord<>("credit.client.info.response", message);
+            record.headers().add("event_type", "get_credit_client_info".getBytes());
+            record.headers().add("correlation_id",(String.valueOf(correlationId).getBytes()));
+            record.headers().add("timeoutExpire", "30".getBytes());
+            kafkaTemplate.send(record);
             log.info("Sent USER_INFO_FOR_CREDIT event: {}", message);
         } catch (final Exception e) {
             log.error("Error sending USER_INFO_FOR_CREDIT event", e);
