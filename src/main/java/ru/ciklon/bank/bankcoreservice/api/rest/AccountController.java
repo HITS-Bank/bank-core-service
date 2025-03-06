@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ru.ciklon.bank.bankcoreservice.api.constant.ApiConstants;
 import ru.ciklon.bank.bankcoreservice.api.dto.AccountTransactionDto;
@@ -18,7 +19,8 @@ import java.util.UUID;
 
 
 @RequiredArgsConstructor
-@RestController(ApiConstants.ACCOUNTS_BASE)
+@RestController
+@RequestMapping(ApiConstants.ACCOUNTS_BASE)
 public class AccountController {
 
     private final AccountService accountService;
