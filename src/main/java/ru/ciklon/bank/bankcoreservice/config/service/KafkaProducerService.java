@@ -3,12 +3,16 @@ package ru.ciklon.bank.bankcoreservice.config.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import ru.ciklon.bank.bankcoreservice.api.dto.ClientInfoDto;
 import ru.ciklon.bank.bankcoreservice.api.dto.CreditAccountCreatedResponse;
+import ru.ciklon.bank.bankcoreservice.api.dto.CreditPaymentResponseDTO;
 import ru.ciklon.bank.bankcoreservice.core.entity.Account;
 import ru.ciklon.bank.bankcoreservice.core.entity.CreditContract;
+
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -41,10 +45,22 @@ public class KafkaProducerService {
             );
             final ObjectMapper objectMapper = new ObjectMapper();
             final String message = objectMapper.writeValueAsString(event);
-            kafkaTemplate.send("credit-account-created", message);
+            kafkaTemplate.send("credit.account.created.response", message);
             log.info("Sent CREDIT_ACCOUNT_CREATED event: {}", event);
         } catch (final Exception e) {
             log.error("Error sending CREDIT_ACCOUNT_CREATED event", e);
         }
+    }
+
+    public void sendCreditPaymentResponse(final CreditPaymentResponseDTO response, final UUID correlationId) {
+        try {
+            final ObjectMapper objectMapper = new ObjectMapper();
+            final String message = objectMapper.writeValueAsString(response);
+            kafkaTemplate.send("credit.account.created", message);
+            log.info("Sent CREDIT_ACCOUNT_CREATED event: {}", response);
+        } catch (final Exception e) {
+            log.error("Error sending CREDIT_ACCOUNT_CREATED event", e);
+        }
+
     }
 }

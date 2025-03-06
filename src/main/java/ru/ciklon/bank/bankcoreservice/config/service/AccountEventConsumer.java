@@ -4,11 +4,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.common.header.Header;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import ru.ciklon.bank.bankcoreservice.api.dto.AccountDto;
 import ru.ciklon.bank.bankcoreservice.api.dto.ClientInfoDto;
 import ru.ciklon.bank.bankcoreservice.api.dto.CreditApprovedDto;
+import ru.ciklon.bank.bankcoreservice.api.dto.CreditPaymentResponseDTO;
 import ru.ciklon.bank.bankcoreservice.api.dto.CreditRepaymentRequest;
 import ru.ciklon.bank.bankcoreservice.api.dto.OpenAccountDto;
 import ru.ciklon.bank.bankcoreservice.core.service.AccountService;
@@ -29,107 +32,117 @@ public class AccountEventConsumer {
     private final KafkaProducerService kafkaProducerService;
     private final ClientService clientService;
 
-    @KafkaListener(topics = "create-account", groupId = "bank-group")
-    public void handleCreateAccount(final String message) {
-        log.info("Received create-account event: {}", message);
+    @KafkaListener(topics = "create.account.request", groupId = "bank.group")
+    public void handleCreateAccount(final ConsumerRecord<String, OpenAccountDto> record) {
+        log.info("Received create.account event: {}", record.value());
         try {
-            final OpenAccountDto openAccountDto = parseMessage(message, OpenAccountDto.class);
-            final AccountDto createdAccount = accountService.openAccount(openAccountDto);
+            final UUID correlationId = parseCorrelationId(record);
+            if (correlationId == null) { return;}
+
+            final AccountDto createdAccount = accountService.openAccount(record.value());
             log.info("Account created successfully: {}", createdAccount);
         } catch (Exception e) {
-            log.error("Error processing create-account event: {}", e.getMessage(), e);
+            log.error("Error processing create.account event: {}", e.getMessage(), e);
         }
     }
 
-    @KafkaListener(topics = "close-account", groupId = "bank-group")
-    public void handleCloseAccount(final String message) {
-        log.info("Received close-account event: {}", message);
+    @KafkaListener(topics = "close.account.request", groupId = "bank.group")
+    public void handleCloseAccount(final ConsumerRecord<String, UUID> record) {
+        log.info("Received close.account event: {}", record.value());
         try {
-            final UUID accountId = UUID.fromString(message);
-            accountService.closeAccount(accountId);
-            log.info("Account closed successfully: {}", accountId);
+            final UUID correlationId = parseCorrelationId(record);
+            if (correlationId == null) { return;}
+
+            accountService.closeAccount(record.value());
+            log.info("Account closed successfully: {}", record.value());
         } catch (Exception e) {
-            log.error("Error processing close-account event: {}", e.getMessage(), e);
+            log.error("Error processing close.account event: {}", e.getMessage(), e);
         }
     }
 
-    @KafkaListener(topics = "credit-approved", groupId = "bank-group")
-    public void handleCreditApproved(final String message) {
-        log.info("Received credit-create event: {}", message);
+    @KafkaListener(topics = "credit.approved.request", groupId = "bank.group")
+    public void handleCreditApproved(final ConsumerRecord<String, CreditApprovedDto> record) {
+        log.info("Received credit.create event: {}", record.value());
         try {
-            final CreditApprovedDto creditApprovedDto = parseMessage(message, CreditApprovedDto.class);
-            creditService.processCreditApproval(creditApprovedDto);
-            log.info("Credit created successfully for client {}", creditApprovedDto.getClientId());
+            final UUID correlationId = parseCorrelationId(record);
+            if (correlationId == null) { return;}
+
+            creditService.processCreditApproval(record.value());
+            log.info("Credit created successfully for client {}", record.value().getClientId());
         } catch (Exception e) {
-            log.error("Error processing credit-create event: {}", e.getMessage(), e);
+            log.error("Error processing credit.create event: {}", e.getMessage(), e);
         }
     }
 
-    @KafkaListener(topics = "credit-repayment", groupId = "bank-group")
-    public void handleCreditRepayment(final String message) {
-        log.info("Received credit repayment event: {}", message);
-        try {
-            final CreditRepaymentRequest repaymentRequest = parseMessage(message, CreditRepaymentRequest.class);
-            accountService.repayCredit(repaymentRequest);
-            log.info("Credit repayment processed for application {}", repaymentRequest.getCreditContractId());
-        } catch (Exception e) {
-            log.error("Error processing credit repayment event: {}", e.getMessage(), e);
-        }
-    }
 
-    @KafkaListener(topics = "block-account", groupId = "bank-group")
-    public void handleBlockAccount(final String message) {
-        log.info("Received block-account event: {}", message);
+    @KafkaListener(topics = "block.account.request", groupId = "bank.group")
+    public void handleBlockAccount(final ConsumerRecord<String, UUID> record) {
+        log.info("Received block.account event: {}", record.value());
         try {
-            final UUID clientId = UUID.fromString(message);
+            final UUID correlationId = parseCorrelationId(record);
+            if (correlationId == null) { return;}
+
+            final UUID clientId = record.value();
             accountService.blockAccount(clientId);
             log.info("Accounts blocked for client {}", clientId);
         } catch (Exception e) {
-            log.error("Error processing block-account event: {}", e.getMessage(), e);
+            log.error("Error processing block.account event: {}", e.getMessage(), e);
         }
     }
 
-    @KafkaListener(topics = "unblock-account", groupId = "bank-group")
-    public void handleUnblockAccount(final String message) {
-        log.info("Received unblock-account event: {}", message);
+    @KafkaListener(topics = "unblock.account.request", groupId = "bank.group")
+    public void handleUnblockAccount(final ConsumerRecord<String, UUID> record) {
+        log.info("Received unblock.account event: {}", record.value());
         try {
-            final UUID clientId = UUID.fromString(message);
+            final UUID correlationId = parseCorrelationId(record);
+            if (correlationId == null) { return;}
+
+            final UUID clientId = record.value();
             accountService.unblockAccount(clientId);
             log.info("Accounts unblocked for client {}", clientId);
         } catch (Exception e) {
-            log.error("Error processing unblock-account event: {}", e.getMessage(), e);
+            log.error("Error processing unblock.account event: {}", e.getMessage(), e);
         }
     }
 
-    @KafkaListener(topics = "block-employee", groupId = "bank-group")
-    public void handleBlockEmployee(final String message) {
-        log.info("Received block-employee event: {}", message);
+    @KafkaListener(topics = "block.employee.request", groupId = "bank.group")
+    public void handleBlockEmployee(final ConsumerRecord<String, UUID> record) {
+        log.info("Received block.employee event: {}", record.value());
         try {
-            final UUID employeeId = UUID.fromString(message);
+            final UUID correlationId = parseCorrelationId(record);
+            if (correlationId == null) { return;}
+
+            final UUID employeeId = record.value();
             employeeService.blockEmployee(employeeId);
             log.info("Employee blocked {}", employeeId);
         } catch (Exception e) {
-            log.error("Error processing block-employee event: {}", e.getMessage(), e);
+            log.error("Error processing block.employee event: {}", e.getMessage(), e);
         }
     }
 
-    @KafkaListener(topics = "unblock-employee", groupId = "bank-group")
-    public void handleUnblockEmployee(final String message) {
-        log.info("Received unblock-employee event: {}", message);
+    @KafkaListener(topics = "unblock.employee.request", groupId = "bank.group")
+    public void handleUnblockEmployee(final ConsumerRecord<String, UUID> record) {
+        log.info("Received unblock.employee event: {}", record.value());
         try {
-            final UUID employeeId = UUID.fromString(message);
+            final UUID correlationId = parseCorrelationId(record);
+            if (correlationId == null) { return;}
+
+            final UUID employeeId = record.value();
             employeeService.unblockEmployee(employeeId);
             log.info("Employee unblocked {}", employeeId);
         } catch (Exception e) {
-            log.error("Error processing unblock-employee event: {}", e.getMessage(), e);
+            log.error("Error processing unblock.employee event: {}", e.getMessage(), e);
         }
     }
 
-    @KafkaListener(topics = "credit.client.info.request", groupId = "bank-group")
-    public void handleClientInfoRequest(final String message) {
-        log.info("Received client info request: {}", message);
+    @KafkaListener(topics = "credit.client.info.request", groupId = "bank.group")
+    public void handleClientInfoRequest(final ConsumerRecord<String, UUID> record) {
+        log.info("Received client info request: {}", record.value());
         try {
-            final UUID clientId = UUID.fromString(message);
+            final UUID correlationId = parseCorrelationId(record);
+            if (correlationId == null) { return;}
+
+            final UUID clientId = record.value();
             final ClientInfoDto clientInfo = clientService.getClientInfoForCredit(clientId);
             kafkaProducerService.sendUserInfoForCredit(clientInfo);
             log.info("Client info sent for client {}", clientId);
@@ -139,8 +152,27 @@ public class AccountEventConsumer {
     }
 
 
-    private <T> T parseMessage(final String message, final Class<T> clazz) throws JsonProcessingException {
-        final ObjectMapper objectMapper = new ObjectMapper();
-        return objectMapper.readValue(message, clazz);
+    @KafkaListener(topics = "credit.payment.request", groupId = "bank.group")
+    public void handleCreditRepayment(final ConsumerRecord<String, CreditRepaymentRequest> record) {
+        try {
+            final UUID correlationId = parseCorrelationId(record);
+            if (correlationId == null) { return;}
+            final CreditPaymentResponseDTO response = accountService.repayCredit(record.value());
+            kafkaProducerService.sendCreditPaymentResponse(response, correlationId);
+            log.info("Credit repayment processed for application {}", record.value().getCreditContractId());
+        } catch (Exception e) {
+            log.error("Error processing credit repayment event: {}", e.getMessage(), e);
+        }
+    }
+
+    private UUID parseCorrelationId(final ConsumerRecord<String, ?> record) {
+        final Header header = record.headers().lastHeader("correlation_id");
+        if (header == null) {
+            log.warn("Получено сообщение без заголовка correlation_id");
+            return null;
+        }
+        final UUID correlationId = UUID.fromString(new String(header.value()));
+
+        return correlationId;
     }
 }
