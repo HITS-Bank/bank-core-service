@@ -20,9 +20,37 @@ public class ClientService {
     private final ClientRepository clientRepository;
     private final AccountService accountService;
     private final CreditService creditService;
+    private final EmployeeService employeeService;
 
 
-    public ClientInfoDto getClientInfo(final UUID clientId) {
+    public ClientInfoDto getClientInfo(final UUID clientId, final UUID employeeId) {
+        final ClientInfoDto clientInfoDto = new ClientInfoDto();
+
+        final Client client = clientRepository.findById(clientId)
+                .orElseThrow(() -> new RuntimeException("Client not found"));
+        clientInfoDto.setClientId(client.getId());
+
+        if (employeeService.isEmployeeBlocked(employeeId)) {
+            throw new RuntimeException("Employee is blocked");
+        }
+
+        final List<AccountDto> accountDtos = accountService.getAccountsByClientId(clientId);
+        clientInfoDto.setAccounts(accountDtos);
+
+        final List<AccountTransactionDto> accountTransactionDtos = accountService.getAccountTransactionsByClientId(clientId);
+        clientInfoDto.setAccountTransactions(accountTransactionDtos);
+
+        final List<CreditContractDto> creditContractDtos = creditService.getCreditsByClientId(clientId);
+        clientInfoDto.setCredits(creditContractDtos);
+
+        final List<CreditTransactionDto> creditContractTransactionDtos = creditService.getCreditContractTransactionsByClientId(clientId);
+        clientInfoDto.setCreditTransactions(creditContractTransactionDtos);
+
+        return clientInfoDto;
+    }
+
+
+    public ClientInfoDto getClientInfoForCredit(final UUID clientId) {
         final ClientInfoDto clientInfoDto = new ClientInfoDto();
 
         final Client client = clientRepository.findById(clientId)

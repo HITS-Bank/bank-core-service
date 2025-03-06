@@ -47,18 +47,6 @@ public class AccountController {
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping(ApiConstants.BLOCK_CLIENT_ACCOUNTS)
-    public ResponseEntity<Void> blockAccount(@PathVariable final UUID clientId) {
-        accountService.blockAccount(clientId);
-        return ResponseEntity.ok().build();
-    }
-
-    @PostMapping(ApiConstants.UNBLOCK_CLIENT_ACCOUNTS)
-    public ResponseEntity<Void> unblockAccount(@PathVariable final UUID clientId) {
-        accountService.unblockAccount(clientId);
-        return ResponseEntity.ok().build();
-    }
-
     @PostMapping(ApiConstants.ACCOUNT_HISTORY)
     public ResponseEntity<List<AccountTransactionDto>> getAccountHistory(@PathVariable final UUID accountId) {
         return ResponseEntity.ok(accountService.getAccountHistory(accountId));

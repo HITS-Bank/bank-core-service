@@ -7,11 +7,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import ru.ciklon.bank.bankcoreservice.api.dto.AccountDto;
+import ru.ciklon.bank.bankcoreservice.api.dto.ClientInfoDto;
 import ru.ciklon.bank.bankcoreservice.api.dto.CreditApprovedDto;
 import ru.ciklon.bank.bankcoreservice.api.dto.CreditRepaymentRequest;
 import ru.ciklon.bank.bankcoreservice.api.dto.OpenAccountDto;
 import ru.ciklon.bank.bankcoreservice.core.service.AccountService;
+import ru.ciklon.bank.bankcoreservice.core.service.ClientService;
 import ru.ciklon.bank.bankcoreservice.core.service.CreditService;
+import ru.ciklon.bank.bankcoreservice.core.service.EmployeeService;
 
 import java.util.UUID;
 
@@ -22,6 +25,9 @@ public class AccountEventConsumer {
 
     private final AccountService accountService;
     private final CreditService creditService;
+    private final EmployeeService employeeService;
+    private final KafkaProducerService kafkaProducerService;
+    private final ClientService clientService;
 
     @KafkaListener(topics = "create-account", groupId = "bank-group")
     public void handleCreateAccount(final String message) {
@@ -70,6 +76,68 @@ public class AccountEventConsumer {
             log.error("Error processing credit repayment event: {}", e.getMessage(), e);
         }
     }
+
+    @KafkaListener(topics = "block-account", groupId = "bank-group")
+    public void handleBlockAccount(final String message) {
+        log.info("Received block-account event: {}", message);
+        try {
+            final UUID clientId = UUID.fromString(message);
+            accountService.blockAccount(clientId);
+            log.info("Accounts blocked for client {}", clientId);
+        } catch (Exception e) {
+            log.error("Error processing block-account event: {}", e.getMessage(), e);
+        }
+    }
+
+    @KafkaListener(topics = "unblock-account", groupId = "bank-group")
+    public void handleUnblockAccount(final String message) {
+        log.info("Received unblock-account event: {}", message);
+        try {
+            final UUID clientId = UUID.fromString(message);
+            accountService.unblockAccount(clientId);
+            log.info("Accounts unblocked for client {}", clientId);
+        } catch (Exception e) {
+            log.error("Error processing unblock-account event: {}", e.getMessage(), e);
+        }
+    }
+
+    @KafkaListener(topics = "block-employee", groupId = "bank-group")
+    public void handleBlockEmployee(final String message) {
+        log.info("Received block-employee event: {}", message);
+        try {
+            final UUID employeeId = UUID.fromString(message);
+            employeeService.blockEmployee(employeeId);
+            log.info("Employee blocked {}", employeeId);
+        } catch (Exception e) {
+            log.error("Error processing block-employee event: {}", e.getMessage(), e);
+        }
+    }
+
+    @KafkaListener(topics = "unblock-employee", groupId = "bank-group")
+    public void handleUnblockEmployee(final String message) {
+        log.info("Received unblock-employee event: {}", message);
+        try {
+            final UUID employeeId = UUID.fromString(message);
+            employeeService.unblockEmployee(employeeId);
+            log.info("Employee unblocked {}", employeeId);
+        } catch (Exception e) {
+            log.error("Error processing unblock-employee event: {}", e.getMessage(), e);
+        }
+    }
+
+    @KafkaListener(topics = "credit.client.info.request", groupId = "bank-group")
+    public void handleClientInfoRequest(final String message) {
+        log.info("Received client info request: {}", message);
+        try {
+            final UUID clientId = UUID.fromString(message);
+            final ClientInfoDto clientInfo = clientService.getClientInfoForCredit(clientId);
+            kafkaProducerService.sendUserInfoForCredit(clientInfo);
+            log.info("Client info sent for client {}", clientId);
+        } catch (Exception e) {
+            log.error("Error processing client info request: {}", e.getMessage(), e);
+        }
+    }
+
 
     private <T> T parseMessage(final String message, final Class<T> clazz) throws JsonProcessingException {
         final ObjectMapper objectMapper = new ObjectMapper();
