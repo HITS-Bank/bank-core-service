@@ -12,6 +12,7 @@ import ru.ciklon.bank.bankcoreservice.api.dto.CreditPaymentResponseDTO;
 import ru.ciklon.bank.bankcoreservice.core.entity.Account;
 import ru.ciklon.bank.bankcoreservice.core.entity.CreditContract;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Slf4j
@@ -45,7 +46,7 @@ public class KafkaProducerService {
             final CreditAccountCreatedResponse event = new CreditAccountCreatedResponse(
                     creditContract.getCreditContractId(),
                     creditAccount.getId(),
-                    creditContract.getCreditAmount()
+                    String.valueOf(creditContract.getCreditAmount())
             );
             final ObjectMapper objectMapper = new ObjectMapper();
             final String message = objectMapper.writeValueAsString(event);

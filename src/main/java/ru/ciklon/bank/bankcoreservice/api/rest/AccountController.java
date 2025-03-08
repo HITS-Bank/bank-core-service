@@ -3,12 +3,15 @@ package ru.ciklon.bank.bankcoreservice.api.rest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import ru.ciklon.bank.bankcoreservice.api.constant.ApiConstants;
+import ru.ciklon.bank.bankcoreservice.api.dto.AccountDto;
 import ru.ciklon.bank.bankcoreservice.api.dto.AccountTransactionDto;
 import ru.ciklon.bank.bankcoreservice.api.dto.OpenAccountDto;
 import ru.ciklon.bank.bankcoreservice.api.dto.TransactionRequest;
@@ -26,9 +29,8 @@ public class AccountController {
     private final AccountService accountService;
 
     @PostMapping(ApiConstants.CREATE_ACCOUNT)
-    public ResponseEntity<Void> createAccount(@RequestBody final OpenAccountDto openAccountDto) {
-        accountService.openAccount(openAccountDto);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+    public ResponseEntity<AccountDto> createAccount(@RequestBody final OpenAccountDto openAccountDto) {
+        return ResponseEntity.ok(accountService.openAccount(openAccountDto));
     }
 
     @PostMapping(ApiConstants.CLOSE_ACCOUNT)
@@ -37,16 +39,29 @@ public class AccountController {
         return ResponseEntity.ok().build();
     }
 
+    @GetMapping(ApiConstants.GET_ACCOUNT)
+    public ResponseEntity<AccountDto> getAccount(@PathVariable final UUID accountId) {
+        return ResponseEntity.ok(accountService.getAccountById(accountId));
+    }
+
+    @GetMapping(ApiConstants.GET_ACCOUNTS)
+    public ResponseEntity<List<AccountDto>> getAccounts(@RequestParam final UUID clientId) {
+        return ResponseEntity.ok(accountService.getAllClientAccounts(clientId));
+    }
+
+    @GetMapping(ApiConstants.GET_ACCOUNT_BY_ACCOUNT_NUMBER)
+    public ResponseEntity<AccountDto> getAccount(@RequestParam final String accountNumber) {
+        return ResponseEntity.ok(accountService.getAccountByAccountNumber(accountNumber));
+    }
+
     @PostMapping(ApiConstants.DEPOSIT)
-    public ResponseEntity<Void> deposit(@RequestBody final TransactionRequest transactionRequest) {
-        accountService.deposit(transactionRequest);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<AccountDto> deposit(@RequestBody final TransactionRequest transactionRequest) {
+        return ResponseEntity.ok(accountService.deposit(transactionRequest));
     }
 
     @PostMapping(ApiConstants.WITHDRAW)
-    public ResponseEntity<Void> withdraw(@RequestBody final TransactionRequest transactionRequest) {
-        accountService.withdraw(transactionRequest);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<AccountDto> withdraw(@RequestBody final TransactionRequest transactionRequest) {
+        return ResponseEntity.ok(accountService.withdraw(transactionRequest));
     }
 
     @PostMapping(ApiConstants.ACCOUNT_HISTORY)

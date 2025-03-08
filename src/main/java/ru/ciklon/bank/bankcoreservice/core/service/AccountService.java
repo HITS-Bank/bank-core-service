@@ -14,9 +14,7 @@ import ru.ciklon.bank.bankcoreservice.core.entity.Client;
 import ru.ciklon.bank.bankcoreservice.core.entity.CreditContract;
 import ru.ciklon.bank.bankcoreservice.core.entity.CreditTransaction;
 import ru.ciklon.bank.bankcoreservice.core.mapper.AccountMapper;
-import ru.ciklon.bank.bankcoreservice.core.mapper.ClientMapper;
 import ru.ciklon.bank.bankcoreservice.core.mapper.AccountTransactionMapper;
-import ru.ciklon.bank.bankcoreservice.core.mapper.CreditContractMapper;
 import ru.ciklon.bank.bankcoreservice.core.repository.AccountRepository;
 import ru.ciklon.bank.bankcoreservice.core.repository.ClientRepository;
 import ru.ciklon.bank.bankcoreservice.core.repository.CreditContractRepository;
@@ -28,6 +26,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -66,9 +65,10 @@ public class AccountService {
         if (account.isClosed()) {
             throw new RuntimeException("Account is closed");
         }
-        account.setBalance(account.getBalance().add(request.getAmount()));
+        final var amount = new BigDecimal(request.getAmount());
+        account.setBalance(account.getBalance().add(amount));
         accountRepository.save(account);
-        recordAccountTransaction(account, AccountTransactionType.DEPOSIT, request.getAmount());
+        recordAccountTransaction(account, AccountTransactionType.DEPOSIT, amount);
         return accountMapper.map(account);
     }
 
@@ -78,13 +78,14 @@ public class AccountService {
         if (account.isClosed()) {
             throw new RuntimeException("Account is closed");
         }
+        final var amount = new BigDecimal(request.getAmount());
 
-        account.setBalance(account.getBalance().subtract(request.getAmount()));
+        account.setBalance(account.getBalance().subtract(amount));
         if (account.getBalance().compareTo(BigDecimal.ZERO) < 0) {
             throw new RuntimeException("Insufficient funds");
         }
         accountRepository.save(account);
-        recordAccountTransaction(account, AccountTransactionType.WITHDRAW, request.getAmount());
+        recordAccountTransaction(account, AccountTransactionType.WITHDRAW, amount);
         return accountMapper.map(account);
     }
 
@@ -125,7 +126,7 @@ public class AccountService {
      * Списываем указанную сумму с баланса счёта и уменьшаем остаток по кредитному договору.
      */
     public CreditPaymentResponseDTO repayCredit(final CreditRepaymentRequest repaymentRequest) {
-        if (repaymentRequest.getCreditAmount() == null || repaymentRequest.getCreditAmount().compareTo(BigDecimal.ZERO) <= 0) {
+        if (repaymentRequest.getCreditAmount() == null || new BigDecimal(repaymentRequest.getCreditAmount()).compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Repayment amount must be greater than zero");
         }
 
@@ -139,13 +140,15 @@ public class AccountService {
             throw new IllegalStateException("Account is closed");
         }
 
-        if (account.getBalance().subtract(repaymentRequest.getCreditAmount()).compareTo(repaymentRequest.getCreditAmount()) < 0) {
+        final var amount = new BigDecimal(repaymentRequest.getCreditAmount());
+        if (account.getBalance().subtract(amount).compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalStateException("Insufficient funds in account for repayment");
         }
 
-        account.setBalance(account.getBalance().subtract(repaymentRequest.getCreditAmount()));
+
+        account.setBalance(account.getBalance().subtract(amount));
         accountRepository.save(account);
-        recordCreditTransaction(creditContract, CreditTransactionType.CREDIT_REPAYMENT_AUTO, repaymentRequest.getCreditAmount());
+        recordCreditTransaction(creditContract, CreditTransactionType.CREDIT_REPAYMENT_AUTO, amount);
 
         creditContract.setRemainingAmount(creditContract.getRemainingAmount().max(BigDecimal.ZERO));
         creditContractRepository.save(creditContract);
@@ -172,5 +175,24 @@ public class AccountService {
         tx.setPaymentDate(LocalDateTime.now());
 
         creditTransactionRepository.save(tx);
+    }
+
+    public AccountDto getAccountById(final UUID accountId) {
+        final Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new RuntimeException("Account not found"));
+        return accountMapper.map(account);
+    }
+
+    public AccountDto getAccountByAccountNumber(final String accountNumber) {
+        final Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new RuntimeException("Account not found"));
+
+        return accountMapper.map(account);
+    }
+
+    public List<AccountDto> getAllClientAccounts(final UUID clientId) {
+        final List<Account> accounts = accountRepository.findByClientId(clientId);
+
+        return accounts.stream().map(accountMapper::map).collect(Collectors.toList());
     }
 }

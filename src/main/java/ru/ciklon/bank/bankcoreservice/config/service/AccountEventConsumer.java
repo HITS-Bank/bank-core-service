@@ -32,13 +32,10 @@ public class AccountEventConsumer {
     private final KafkaProducerService kafkaProducerService;
     private final ClientService clientService;
 
-    @KafkaListener(topics = "create.account.request", groupId = "bank.group")
+    @KafkaListener(topics = "create.account", groupId = "bank.group")
     public void handleCreateAccount(final ConsumerRecord<String, OpenAccountDto> record) {
         log.info("Received create.account event: {}", record.value());
         try {
-            final UUID correlationId = parseCorrelationId(record);
-            if (correlationId == null) { return;}
-
             final AccountDto createdAccount = accountService.openAccount(record.value());
             log.info("Account created successfully: {}", createdAccount);
         } catch (Exception e) {
@@ -46,13 +43,10 @@ public class AccountEventConsumer {
         }
     }
 
-    @KafkaListener(topics = "close.account.request", groupId = "bank.group")
+    @KafkaListener(topics = "close.account", groupId = "bank.group")
     public void handleCloseAccount(final ConsumerRecord<String, UUID> record) {
         log.info("Received close.account event: {}", record.value());
         try {
-            final UUID correlationId = parseCorrelationId(record);
-            if (correlationId == null) { return;}
-
             accountService.closeAccount(record.value());
             log.info("Account closed successfully: {}", record.value());
         } catch (Exception e) {
@@ -72,13 +66,10 @@ public class AccountEventConsumer {
     }
 
 
-    @KafkaListener(topics = "block.account.request", groupId = "bank.group")
+    @KafkaListener(topics = "block.account", groupId = "bank.group")
     public void handleBlockAccount(final ConsumerRecord<String, UUID> record) {
         log.info("Received block.account event: {}", record.value());
         try {
-            final UUID correlationId = parseCorrelationId(record);
-            if (correlationId == null) { return;}
-
             final UUID clientId = record.value();
             accountService.blockAccount(clientId);
             log.info("Accounts blocked for client {}", clientId);
@@ -87,13 +78,10 @@ public class AccountEventConsumer {
         }
     }
 
-    @KafkaListener(topics = "unblock.account.request", groupId = "bank.group")
+    @KafkaListener(topics = "unblock.account", groupId = "bank.group")
     public void handleUnblockAccount(final ConsumerRecord<String, UUID> record) {
         log.info("Received unblock.account event: {}", record.value());
         try {
-            final UUID correlationId = parseCorrelationId(record);
-            if (correlationId == null) { return;}
-
             final UUID clientId = record.value();
             accountService.unblockAccount(clientId);
             log.info("Accounts unblocked for client {}", clientId);
@@ -102,13 +90,10 @@ public class AccountEventConsumer {
         }
     }
 
-    @KafkaListener(topics = "block.employee.request", groupId = "bank.group")
+    @KafkaListener(topics = "block.employee", groupId = "bank.group")
     public void handleBlockEmployee(final ConsumerRecord<String, UUID> record) {
         log.info("Received block.employee event: {}", record.value());
         try {
-            final UUID correlationId = parseCorrelationId(record);
-            if (correlationId == null) { return;}
-
             final UUID employeeId = record.value();
             employeeService.blockEmployee(employeeId);
             log.info("Employee blocked {}", employeeId);
@@ -141,8 +126,7 @@ public class AccountEventConsumer {
 
             final UUID clientId = UUID.fromString(record.value());
 
-            //final ClientInfoDto clientInfo = clientService.getClientInfoForCredit(clientId);
-            final ClientInfoDto clientInfo = new ClientInfoDto();
+            final ClientInfoDto clientInfo = clientService.getClientInfoForCredit(clientId);
             kafkaProducerService.sendUserInfoForCredit(clientInfo,correlationId);
             log.info("Client info sent for client {}", clientId);
         } catch (Exception e) {

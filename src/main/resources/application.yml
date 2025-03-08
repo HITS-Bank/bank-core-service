@@ -7,7 +7,7 @@ spring:
   application:
     name: bank-core-service
   datasource:
-    url: jdbc:postgresql://localhost:5436/postgres
+    url: ${USER_DATABASE_URL:jdbc:postgresql://localhost:5436/bank}
     username: postgres
     password: 12345
     driver-class-name: org.postgresql.Driver
@@ -21,13 +21,13 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
   kafka:
     consumer:
-      bootstrap-servers: localhost:9092
+      bootstrap-servers: kafka:9092
       group-id: bank-group
       auto-offset-reset: earliest
     listener:
       missing-topics-fatal: false
     producer:
-      bootstrap-servers: localhost:9092
+      bootstrap-servers: kafka:9092
 
 logging:
   liquibase:

@@ -1,21 +1,11 @@
-FROM openjdk:17.0.2-jdk as build
+FROM openjdk:17-jdk-slim
 
 ARG JAR_FILE
-WORKDIR /build
 
-ADD $JAR_FILE application.jar
-RUN java -Djarmode=layertools -jar application.jar extract --destination extracted
+WORKDIR /app
 
-FROM openjdk:17.0.2-jdk
+COPY ${JAR_FILE} /app/app.jar
 
-RUN groupadd spring-boot-group && useradd -g spring-boot-group spring-boot
-USER spring-boot
-VOLUME /tmp
-WORKDIR /application
+EXPOSE 9090
 
-COPY --from=build /build/extracted/dependencies .
-COPY --from=build /build/extracted/spring-boot-loader .
-COPY --from=build /build/extracted/snapshot-dependencies .
-COPY --from=build /build/extracted/application .
-
-ENTRYPOINT exec java ${JAVA_OPTS} org.springframework.boot.loader.launch.JarLauncher ${0} ${@}
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]

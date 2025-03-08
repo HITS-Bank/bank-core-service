@@ -9,7 +9,7 @@ import java.util.UUID;
 public class AccountDto {
     private UUID accountId;
     private String accountNumber;
-    private BigDecimal balance;
+    private String balance;
     private boolean blocked;
     private boolean closed;
 }
