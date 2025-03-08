@@ -20,14 +20,15 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
   kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
     consumer:
-      bootstrap-servers: kafka:9092
+      bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
       group-id: bank-group
       auto-offset-reset: earliest
     listener:
       missing-topics-fatal: false
     producer:
-      bootstrap-servers: kafka:9092
+      bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
 
 logging:
   liquibase:

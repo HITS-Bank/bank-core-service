@@ -36,6 +36,7 @@ services:
         KAFKA_BROKER_ID: 1
         KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
         KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+        KAFKA_LISTENER_SECURITY_PROTOCOL: PLAINTEXT
         KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       networks:
         - network-local
@@ -60,6 +61,7 @@ services:
         USER_DATABASE_URL: jdbc:postgresql://postgresql:5432/bank
         SPRING_DATASOURCE_USERNAME: postgres
         SPRING_DATASOURCE_PASSWORD: 12345
+        SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
 
 volumes:
     postgres1:
